@@ -18,13 +18,15 @@ export default function CadastroPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     nome: "",
-    area: "", // Vai para o campo 'celula' no banco
+    area: "",
     cargo: "",
     email: "",
     senha: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false); // <--- Novo estado para controlar o sucesso
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,7 +38,6 @@ export default function CadastroPage() {
     setError("");
 
     try {
-      // Envia para a rota /membros do Python
       const response = await fetch("http://localhost:5000/membros", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,23 +47,50 @@ export default function CadastroPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Conta criada com sucesso! Faça login para continuar.");
-        router.push("/login"); // Volta para o login
+        // 1. Ativa o modo "Sucesso" (mostra o alerta bonito)
+        setSuccess(true);
+
+        // 2. Espera 2 segundos e redireciona sozinho
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
       } else {
         setError(data.erro || "Erro ao criar conta.");
+        setLoading(false); // Só para o loading se der erro. Se der sucesso, mantemos ele (ou a tela de sucesso) rodando.
       }
-    } catch (err: any) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       setError("Erro de conexão. Verifique se a API Python está rodando.");
-    } finally {
       setLoading(false);
     }
   }
 
+  // --- SE TIVER SUCESSO, MOSTRA SÓ O ALERTA BONITO ---
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl text-center border border-green-100 animate-in fade-in zoom-in duration-300 max-w-sm w-full">
+          <div className="mx-auto bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 text-green-600">
+            <CheckCircle className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">
+            Conta Criada!
+          </h2>
+          <p className="text-slate-500 text-sm">
+            Redirecionando para o login...
+          </p>
+          <div className="mt-4 flex justify-center">
+            <Loader2 className="w-5 h-5 text-green-600 animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- SE NÃO, MOSTRA O FORMULÁRIO NORMAL ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-8">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-        {/* Cabeçalho */}
         <div className="bg-slate-900 p-6 flex items-center gap-4">
           <Link
             href="/login"
@@ -80,7 +108,7 @@ export default function CadastroPage() {
 
         <div className="p-8">
           <form onSubmit={handleCadastro} className="space-y-4">
-            {/* Nome Completo */}
+            {/* Nome */}
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase">
                 Nome Completo
@@ -97,7 +125,7 @@ export default function CadastroPage() {
               </div>
             </div>
 
-            {/* Área / Célula */}
+            {/* Area */}
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase">
                 Área / Célula
@@ -109,7 +137,7 @@ export default function CadastroPage() {
                   required
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="Ex: Comercial, Projetos..."
+                  placeholder="Ex: Comercial"
                 />
               </div>
             </div>
@@ -131,7 +159,7 @@ export default function CadastroPage() {
               </div>
             </div>
 
-            {/* E-mail */}
+            {/* Email */}
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase">
                 E-mail Corporativo
